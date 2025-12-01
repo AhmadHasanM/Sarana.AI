@@ -5,7 +5,7 @@ load_dotenv()
 
 import os
 import tempfile
-from langchain_google_genai import GoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores.pgvector import PGVector
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -54,12 +54,11 @@ def process_pdf(uploaded_file):
     return db
 
 def get_qa_chain(db):
-    llm = GoogleGenerativeAI(model=LLM_MODEL, google_api_key=GEMINI_API_KEY, temperature=0.3)
-    return RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=db.as_retriever(search_kwargs={"k": 6})
-    )
+    llm = ChatGoogleGenerativeAI(
+    model=LLM_MODEL,
+    google_api_key=GEMINI_API_KEY,
+    temperature=0.3
+)
 
 # ------------------- UI -------------------
 st.title("Sarana.AI – Chat dengan PDF Kamu")
