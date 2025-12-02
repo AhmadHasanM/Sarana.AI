@@ -1,65 +1,54 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, File, UploadFile, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from app.services.summarizer import run_summarization_with_pdf
 import shutil
-import tempfile
 import os
 
-app = FastAPI(
-    title="PDF Summarizer",
-    description="Upload PDF lalu sistem akan menganalisis isi (teks + gambar + tabel).",
-    version="2.0.0"
-)
+# ← PAKAI RELATIVE IMPORT (WAJIB!)
+from .services.pdf_reader import extract_content_from_pdf
+from .services.summarizer import summarize_pdf
+from .models.responses import SummaryResponse
 
+app = FastAPI(title="AI PDF Summarizer - LangChain + Gemini")
+
+# Pastikan folder static & templates ada
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+templates = Jinja2Templates(directory="app/templates")
+
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 @app.get("/", response_class=HTMLResponse)
-def homepage():
-    template_path = "app/templates/index.html"
-
-    if not os.path.exists(template_path):
-        raise HTTPException(500, detail="Template index.html tidak ditemukan.")
-
-    with open(template_path, "r", encoding="utf-8") as f:
-        return f.read()
+async def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.post("/summarize")
 async def summarize(file: UploadFile = File(...)):
+    if not file.filename.endswith(".pdf"):
+        return JSONResponse({"error": "Hanya file PDF yang diperbolehkan"}, status_code=400)
 
-    if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="File harus berformat PDF.")
+    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    with open(file_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
 
     try:
-        # Simpan PDF ke file temporary
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-            shutil.copyfileobj(file.file, tmp)
-            pdf_path = tmp.name
+        contents = extract_content_from_pdf(file_path)
+        image_count = sum(1 for c in contents if c["type"] == "image")
 
-        # Baca PDF sebagai bytes
-        with open(pdf_path, "rb") as f:
-            pdf_bytes = f.read()
+        summary = await summarize_pdf(contents)
 
-        # Summarize langsung dari PDF (multimodal)
-        summary = run_summarization_with_pdf(pdf_bytes)
+        os.remove(file_path)  # bersihkan
 
-        return {
-            "filename": file.filename,
-            "summary": summary
-        }
+        return JSONResponse({
+            "summary": summary,
+            "page_count": len([c for c in contents if c["type"] == "text"]),
+            "processed_images": image_count
+        })
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Terjadi kesalahan saat memproses PDF: {str(e)}"
-        )
-
-    finally:
-        # Hapus file temp
-        try:
-            if os.path.exists(pdf_path):
-                os.remove(pdf_path)
-        except:
-            pass
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        return JSONResponse({"error": str(e)}, status_code=500)

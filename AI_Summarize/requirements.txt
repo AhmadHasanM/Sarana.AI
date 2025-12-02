@@ -1,13 +1,10 @@
-fastapi
-uvicorn
-python-dotenv
-pypdf
-google-generativeai
-langchain
-langchain-community
-langchain-google-genai
-python-multipart
-sentence-transformers
-torch
-pgvector
-psycopg2-binary
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+jinja2==3.1.4
+langchain==0.3.2
+langchain-google-genai==2.0.4
+langchain-community==0.3.1
+pymupdf==1.24.10  # untuk extract text + gambar dari PDF
+python-dotenv==1.0.1
+pydantic==2.9.2

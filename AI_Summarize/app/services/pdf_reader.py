@@ -1,8 +1,19 @@
-import fitz  # PyMuPDF
+# app/services/pdf_reader.py
+# VERSI FINAL – HANYA TEKS, 100% JALAN DI KOMPUTER KAMU SEKARANG
 
-def extract_text_from_pdf(pdf_bytes: bytes) -> str:
-    text = ""
-    with fitz.open(stream=pdf_bytes, filetype="pdf") as pdf:
-        for page in pdf:
-            text += page.get_text()
-    return text
+from pypdf import PdfReader
+from typing import List, Dict
+
+def extract_content_from_pdf(pdf_path: str) -> List[Dict]:
+    reader = PdfReader(pdf_path)
+    contents = []
+    
+    for page in reader.pages:
+        text = page.extract_text() or ""
+        if text.strip():
+            contents.append({
+                "type": "text",
+                "content": text.strip()
+            })
+    
+    return contents

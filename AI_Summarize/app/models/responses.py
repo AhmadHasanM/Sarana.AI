@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
 class SummaryResponse(BaseModel):
-    filename: str
     summary: str
+    page_count: int
+    processed_images: int

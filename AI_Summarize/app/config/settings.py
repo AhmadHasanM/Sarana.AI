@@ -1,9 +1,12 @@
-from dotenv import load_dotenv
-import os
+from pydantic_settings import BaseSettings
+from functools import lru_cache
 
-load_dotenv()
+class Settings(BaseSettings):
+    GOOGLE_API_KEY: str
+    
+    class Config:
+        env_file = ".env"
 
-class Settings:
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY")
-
-settings = Settings()
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
