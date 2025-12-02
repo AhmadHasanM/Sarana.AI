@@ -13,20 +13,17 @@ genai.configure(api_key=API_KEY)
 
 
 def run_summarization_with_pdf(pdf_bytes: bytes):
-    # Ambil prompt dari prompt builder
-    msgs = build_prompt("Berikut PDF yang ingin dianalisis:")
 
-    system_prompt = msgs[0].content
-    human_prompt = msgs[1].content
+    system_prompt, human_prompt = build_prompt()
 
-    # Tambahkan konfigurasi model
     generation_config = {
-        "temperature": 0.1,   # Lebih konsisten
+        "temperature": 0.1,
         "top_p": 0.9,
         "top_k": 40,
-        "max_output_tokens": 2048
+        "max_output_tokens": 4096
     }
 
+    # SANGAT disarankan untuk PDF: gemini-1.5-flash
     model = genai.GenerativeModel(
         model_name="gemini-2.5-flash",
         generation_config=generation_config
@@ -34,8 +31,8 @@ def run_summarization_with_pdf(pdf_bytes: bytes):
 
     response = model.generate_content(
         [
-            {"text": system_prompt},
-            {"text": human_prompt},
+            {"text": system_prompt.content},
+            {"text": human_prompt.content},
             {
                 "inline_data": {
                     "mime_type": "application/pdf",
@@ -45,5 +42,12 @@ def run_summarization_with_pdf(pdf_bytes: bytes):
         ],
         safety_settings="BLOCK_NONE"
     )
+
+    # Antisipasi finish_reason=2
+    if not response.candidates or not response.candidates[0].content:
+        raise ValueError(
+            "Model tidak menghasilkan output. finish_reason="
+            + str(response.candidates[0].finish_reason)
+        )
 
     return response.text
