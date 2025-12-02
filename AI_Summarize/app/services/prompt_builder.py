@@ -12,15 +12,13 @@ def build_prompt():
 
     human = HumanMessage(
         content=(
-            "Berikan ringkasan lengkap dari dokumen berikut dalam bahasa Indonesia.\n\n"
-            "Gunakan struktur output berikut:\n"
-            "1. **Ringkasan Umum:** (3–5 kalimat ringkasan utama)\n"
-            "2. **Poin-poin Penting:** (bullet points berisi informasi terpenting)\n"
-            "3. **Insight Penting:** (analisis/interpretasi dari isi dokumen)\n"
-            "4. **Analisis Tabel:** (jika ada tabel, jelaskan isinya dan maknanya)\n"
-            "5. **Analisis Gambar/Diagram:** (jika ada gambar, jelaskan apa yang ditampilkan dan insightnya)\n\n"
-            "Jika tidak ada tabel atau gambar, cukup tulis: 'Tidak ada tabel/gambar yang ditemukan.'\n\n"
-        
+            "Tolong analisis PDF terlampir dan berikan ringkasan dengan struktur berikut:\n"
+            "1. Ringkasan Umum\n"
+            "2. Poin-poin Penting\n"
+            "3. Insight Penting\n"
+            "4. Analisis Tabel (jika ada)\n"
+            "5. Analisis Gambar/Diagram (jika ada)\n\n"
+            "Jika tidak ada tabel atau gambar, sebutkan tidak ada."
         )
     )
 
