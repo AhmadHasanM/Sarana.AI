@@ -5,14 +5,12 @@ from fastapi.staticfiles import StaticFiles
 import shutil
 import os
 
-# ← PAKAI RELATIVE IMPORT (WAJIB!)
 from .services.pdf_reader import extract_content_from_pdf
 from .services.summarizer import summarize_pdf
 from .models.responses import SummaryResponse
 
 app = FastAPI(title="AI PDF Summarizer - LangChain + Gemini")
 
-# Pastikan folder static & templates ada
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
@@ -40,7 +38,7 @@ async def summarize(file: UploadFile = File(...)):
 
         summary = await summarize_pdf(contents)
 
-        os.remove(file_path)  # bersihkan
+        os.remove(file_path) 
 
         return JSONResponse({
             "summary": summary,
