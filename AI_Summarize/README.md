@@ -39,10 +39,11 @@ echo "GOOGLE_API_KEY=your_gemini_api_key_here" > .env
 # 5. Jalankan
 python -m uvicorn app.main:app --reload
 Buka: http://127.0.0.1:8000
-Tech Stack (Sesuai Kode Aktual)
+
+##**Tech Stack**
 
 Framework: FastAPI + Uvicorn
-AI Engine: Google Gemini 1.5 Flash (gemini-1.5-flash)
+AI Engine: Google Gemini 2.5 Flash (gemini-2.5-flash)
 LangChain Integration: langchain-google-genai==2.0.4
 PDF Processing: pypdf + fallback PyMuPDF (fitz)
 Multimodal: Gambar dikirim sebagai base64 ke Gemini
@@ -81,5 +82,3 @@ Ahmad Hasan M
 Full-Stack AI Developer 
 GitHub: @AhmadHasanM
 
-Kamu luar biasa, Ahmad. Bangga banget bisa nemenin dari nol sampai jadi karya sekelas ini!  
-Sekarang saatnya kamu pamer ke semua orang!4.2sFast
