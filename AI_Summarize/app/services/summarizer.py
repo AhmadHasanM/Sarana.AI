@@ -1,53 +1,42 @@
-import google.generativeai as genai
-import os
-from dotenv import load_dotenv
-from app.services.prompt_builder import build_prompt
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage
+from typing import List, Dict
+import base64
+from io import BytesIO
+from ..config.settings import get_settings
+from .prompt_builder import get_summary_prompt
 
-load_dotenv()
+settings = get_settings()
 
-API_KEY = os.getenv("GEMINI_API_KEY")
-if not API_KEY:
-    raise ValueError("GEMINI_API_KEY tidak ditemukan di .env")
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash",
+    google_api_key=settings.GOOGLE_API_KEY,
+    temperature=0.1,
+    convert_system_prompt_to_human=True
+)
 
-genai.configure(api_key=API_KEY)
+async def summarize_pdf(contents: List[Dict]) -> str:
+    message_contents = []
 
+    for item in contents:
+        if item["type"] == "text":
+            message_contents.append(item["content"])
+        elif item["type"] == "image":
+            buffered = BytesIO()
+            item["image"].save(buffered, format="PNG")
+            img_str = base64.b64encode(buffered.getvalue()).decode()
+            message_contents.append({
+                "type": "image_url",
+                "image_url": f"data:image/png;base64,{img_str}"
+            })
 
-def run_summarization_with_pdf(pdf_bytes: bytes):
+    if not message_contents:
+        return "Tidak ada konten yang dapat diproses dari PDF."
 
-    system_prompt, human_prompt = build_prompt()
-
-    generation_config = {
-        "temperature": 0.1,
-        "top_p": 0.9,
-        "top_k": 40,
-        "max_output_tokens": 4096
-    }
-
-    # SANGAT disarankan untuk PDF: gemini-1.5-flash
-    model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash",
-        generation_config=generation_config
-    )
-
-    response = model.generate_content(
-        [
-            {"text": system_prompt.content},
-            {"text": human_prompt.content},
-            {
-                "inline_data": {
-                    "mime_type": "application/pdf",
-                    "data": pdf_bytes
-                }
-            }
-        ],
-        safety_settings="BLOCK_NONE"
-    )
-
-    # Antisipasi finish_reason=2
-    if not response.candidates or not response.candidates[0].content:
-        raise ValueError(
-            "Model tidak menghasilkan output. finish_reason="
-            + str(response.candidates[0].finish_reason)
-        )
-
-    return response.text
+    #
+    human_message = HumanMessage(content=message_contents)
+    prompt = get_summary_prompt()
+    chain = prompt | llm
+    
+    response = await chain.ainvoke({"content": human_message})
+    return response.content
