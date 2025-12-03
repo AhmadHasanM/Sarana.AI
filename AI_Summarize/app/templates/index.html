@@ -1,25 +1,154 @@
+yaa, berikut ini index.html saya
+
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <title>AI PDF Summarizer</title>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Summarizer Profesional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
-        body { font-family: Arial; max-width: 800px; margin: 40px auto; padding: 20px; }
-        .result { margin-top: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; }
+        /* Progress bar */
+        #progress-bar {
+            width: 0%;
+            transition: width 0.4s ease-in-out;
+        }
+        
+        /* Loading dots */
+        @keyframes dots {
+            0% { content: ""; }
+            33% { content: "."; }
+            66% { content: ".."; }
+            100% { content: "..."; }
+        }
+
+        .loading-text:after {
+            content: "";
+            animation: dots 1s infinite;
+        }
     </style>
 </head>
-<body>
-    <h1>AI PDF Summarizer (Gemini 2.5 + LangChain)</h1>
-    <form action="/summarize" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" accept=".pdf" required>
-        <button type="submit">Ringkas PDF</button>
-    </form>
 
-    {% if summary %}
-    <div class="result">
-        <h2>Hasil Ringkasan:</h2>
-        <div>{{ summary | safe }}</div>
+<body class="bg-gray-100 min-h-screen">
+
+    <div class="max-w-3xl mx-auto p-6">
+
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">
+            📄 PDF Summarizer <span class="text-blue-600">Multimodal</span>
+        </h1>
+
+        <!-- CARD -->
+        <div class="bg-white shadow-xl rounded-xl p-6 border border-gray-200">
+
+            <!-- File Upload -->
+            <label class="block text-lg font-medium text-gray-700 mb-3">
+                Upload File PDF
+            </label>
+
+            <input id="pdf-file" 
+                type="file" 
+                accept="application/pdf"
+                class="block w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-blue-500 focus:border-blue-500">
+
+            <p id="file-name" class="text-sm text-gray-500 mb-4 hidden"></p>
+
+            <!-- Progress Bar -->
+            <div id="progress-container" class="w-full bg-gray-200 rounded-full h-3 mb-4 hidden">
+                <div id="progress-bar" class="bg-blue-600 h-3 rounded-full"></div>
+            </div>
+
+            <!-- Submit Button -->
+            <button id="submit-btn"
+                class="w-full py-3 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+                🔍 Mulai Proses Ringkasan
+            </button>
+
+        </div>
+
+        <!-- Result Box -->
+        <div id="result-box" class="mt-8 hidden">
+            <div class="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
+                <h2 class="text-xl font-bold mb-4 text-gray-800">📘 Hasil Ringkasan</h2>
+                <pre id="summary-text" class="whitespace-pre-wrap text-gray-700"></pre>
+            </div>
+        </div>
+
     </div>
-    {% endif %}
+
+    <script>
+        const fileInput = document.getElementById("pdf-file");
+        const fileName = document.getElementById("file-name");
+        const submitBtn = document.getElementById("submit-btn");
+        const progressContainer = document.getElementById("progress-container");
+        const progressBar = document.getElementById("progress-bar");
+        const resultBox = document.getElementById("result-box");
+        const summaryText = document.getElementById("summary-text");
+
+        let selectedFile = null;
+
+        fileInput.addEventListener("change", function () {
+            selectedFile = this.files[0];
+            if (selectedFile) {
+                fileName.textContent = `📄 File dipilih: ${selectedFile.name}`;
+                fileName.classList.remove("hidden");
+            }
+        });
+
+        submitBtn.addEventListener("click", async function () {
+            if (!selectedFile) {
+                alert("Silakan pilih file PDF terlebih dahulu.");
+                return;
+            }
+
+            // Reset
+            resultBox.classList.add("hidden");
+            summaryText.textContent = "";
+            progressContainer.classList.remove("hidden");
+            progressBar.style.width = "0%";
+
+            // Fake progress animation
+            let fakeProgress = 0;
+            const progressInterval = setInterval(() => {
+                fakeProgress += 10;
+                if (fakeProgress <= 90) {
+                    progressBar.style.width = fakeProgress + "%";
+                }
+            }, 300);
+
+            // Disable button + loading text
+            submitBtn.disabled = true;
+            submitBtn.textContent = "⏳ Memproses";
+
+            // Build FormData
+            const formData = new FormData();
+            formData.append("file", selectedFile);
+
+            try {
+                const response = await fetch("/summarize", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // Show output
+                resultBox.classList.remove("hidden");
+                summaryText.textContent = data.summary || "Tidak ada ringkasan.";
+
+                // Finish progress
+                clearInterval(progressInterval);
+                progressBar.style.width = "100%";
+
+            } catch (err) {
+                alert("Terjadi kesalahan saat memproses PDF.");
+                console.error(err);
+            }
+
+            submitBtn.disabled = false;
+            submitBtn.textContent = "🔍 Mulai Proses Ringkasan";
+        });
+    </script>
+
 </body>
 </html>
